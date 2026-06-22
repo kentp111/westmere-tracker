@@ -3,304 +3,885 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Westmere — Table Screen</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<title>Westmere Tracker</title>
 <style>
-  :root{
-    --ink:#0b1316; --panel:#13201f; --panel2:#0f1a1c;
-    --gold:#c9a24b; --gold-dim:#7d6730;
-    --parch:#ece4d2; --muted:#8b938f; --line:rgba(201,162,75,.22);
-    --hp-good:#5fb86a; --hp-mid:#d8a23a; --hp-low:#d05a4f;
+  :root {
+    --bg:        #0d1419;
+    --panel:     #16212b;
+    --panel-2:   #1e2c38;
+    --line:      #2c3d4c;
+    --line-soft: #223240;
+    --ink:       #e7eef3;
+    --ink-dim:   #93a6b4;
+    --ink-faint: #5f7585;
+    --amber:     #e6a849;
+    --amber-dim: #8a6a30;
+    --green:     #5bbf7a;
+    --red:       #d8615c;
+    --blue:      #5b9bd8;
+    --radius:    10px;
+    --shadow:    0 1px 0 rgba(255,255,255,0.03), 0 8px 24px rgba(0,0,0,0.35);
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{
-    font-family:'Spectral',Georgia,serif; color:var(--parch);
-    background:
-      radial-gradient(1200px 700px at 50% -10%, #1c2f30 0%, rgba(28,47,48,0) 60%),
-      radial-gradient(900px 600px at 85% 110%, #20231a 0%, rgba(0,0,0,0) 55%),
-      var(--ink);
-    height:100vh; overflow:hidden; padding:1.6vh 1.6vw;
-    display:grid; grid-template-rows:auto auto 1fr; gap:1.4vh;
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
   }
-  .hdr{display:flex; align-items:center; justify-content:space-between; gap:2vw;
-    border-bottom:1px solid var(--line); padding-bottom:1vh}
-  .brand{font-family:'Cinzel',serif; font-weight:700; letter-spacing:.18em;
-    font-size:clamp(20px,2.6vw,40px); color:var(--gold)}
-  .brand small{display:block; font-family:'Spectral',serif; font-style:italic;
-    font-weight:400; letter-spacing:.02em; color:var(--muted); font-size:clamp(11px,.95vw,15px)}
-  .scene{flex:1; min-width:0}
-  .scene input{width:100%; background:transparent; border:none; color:var(--parch);
-    font-family:'Spectral',serif; font-style:italic; font-size:clamp(15px,1.5vw,24px);
-    text-align:center; outline:none; border-bottom:1px dashed transparent; padding:.3em 0}
-  .scene input:focus{border-bottom:1px dashed var(--gold-dim)}
-  .turnbadge{font-family:'Cinzel',serif; text-align:right; min-width:14vw}
-  .turnbadge .r{font-size:clamp(11px,.9vw,14px); letter-spacing:.18em; color:var(--muted)}
-  .turnbadge .t{font-size:clamp(16px,1.5vw,24px); color:var(--gold); letter-spacing:.04em}
+  h1, h2, h3 { margin: 0; font-weight: 650; }
+  button {
+    font: inherit; color: var(--ink); cursor: pointer;
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 11px;
+  }
+  button:hover { border-color: var(--amber-dim); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid var(--amber); outline-offset: 1px;
+  }
+  input, select, textarea {
+    font: inherit; color: var(--ink);
+    background: #0e1820; border: 1px solid var(--line);
+    border-radius: 6px; padding: 5px 7px;
+  }
+  input[type="number"] { width: 64px; }
+  textarea { width: 100%; resize: vertical; min-height: 46px; }
+  .muted { color: var(--ink-dim); }
+  .faint { color: var(--ink-faint); }
+  .tiny { font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .spacer { flex: 1; }
 
-  .party{display:grid; grid-template-columns:1fr 1fr; gap:1.4vw}
-  .pc{position:relative; background:linear-gradient(180deg,var(--panel),var(--panel2));
-    border:1px solid var(--line); border-radius:14px; padding:1.3vh 1.3vw 1.3vh 1.6vw;
-    display:flex; flex-direction:column; gap:.75vh}
-  .pc::before{content:""; position:absolute; left:0; top:14%; bottom:14%; width:4px;
-    border-radius:4px; background:var(--accent)}
-  .pchead{display:flex; align-items:flex-start; justify-content:space-between; gap:1vw}
-  .pc .nm{font-family:'Cinzel',serif; font-weight:600; font-size:clamp(16px,1.7vw,28px);
-    letter-spacing:.03em; color:var(--accent); line-height:1.1}
-  .pc .sub{font-style:italic; color:var(--muted); font-size:clamp(11px,1vw,15px)}
-  .ac{text-align:center; border:1px solid var(--line); border-radius:10px;
-    padding:.4vh .9vw; min-width:4.4vw; flex:none}
-  .ac .lbl{font-family:'Cinzel',serif; font-size:clamp(9px,.7vw,12px); letter-spacing:.14em; color:var(--muted)}
-  .ac .val{font-weight:700; font-size:clamp(20px,2.1vw,34px)}
-  .hpwrap{display:flex; align-items:baseline; gap:.6vw}
-  .hpnum{font-weight:700; font-size:clamp(26px,3vw,52px); line-height:1}
-  .hpmax{color:var(--muted); font-size:clamp(15px,1.4vw,24px)}
-  .hplabel{font-family:'Cinzel',serif; letter-spacing:.14em; color:var(--muted);
-    font-size:clamp(10px,.8vw,13px); margin-left:auto; align-self:center}
-  .bar{height:1.3vh; min-height:9px; background:#0a1112;
-    border:1px solid var(--line); border-radius:6px; overflow:hidden}
-  .bar > i{display:block; height:100%; transition:width .25s ease, background .25s}
-  .ctl{display:flex; flex-wrap:wrap; align-items:center; gap:.5vw}
-  .ctl input{width:4.2vw; min-width:44px; background:#0a1112; border:1px solid var(--line);
-    color:var(--parch); border-radius:8px; padding:.5vh .4vw; text-align:center;
-    font-family:'Spectral',serif; font-size:clamp(13px,1.1vw,18px)}
-  button{font-family:'Cinzel',serif; letter-spacing:.06em; cursor:pointer;
-    background:#101b1b; color:var(--parch); border:1px solid var(--line);
-    border-radius:8px; padding:.55vh .8vw; font-size:clamp(11px,.95vw,15px); transition:all .15s}
-  button:hover{border-color:var(--gold); color:var(--gold)}
-  button:active{transform:scale(.96)}
-  button.dmg:hover{border-color:var(--hp-low); color:var(--hp-low)}
-  button.heal:hover{border-color:var(--hp-good); color:var(--hp-good)}
-  button.gold{background:#1a1408; border-color:var(--gold-dim); color:var(--gold)}
-  button:disabled{opacity:.35; cursor:not-allowed; pointer-events:none}
-  .hd-pip{border-radius:3px !important}  /* square pips distinguish hit dice */
-  .roll-result{color:var(--hp-good); font-style:italic; font-size:clamp(10px,.85vw,13px); margin-left:.3vw}
-  /* Editable initiative for PC rows in the tracker */
-  .ini-edit{
-    width:3ch; min-width:36px; background:transparent; border:none;
-    border-bottom:1px dashed var(--gold-dim); color:var(--gold);
-    font-family:'Cinzel',serif; font-weight:700;
-    font-size:clamp(15px,1.5vw,24px); text-align:center; outline:none; padding:0;
-    -moz-appearance:textfield;
+  /* ---- header ---- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: linear-gradient(180deg, #141f29 0%, #0f181f 100%);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 18px;
   }
-  .ini-edit::-webkit-outer-spin-button,
-  .ini-edit::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
-  .ini-edit:focus{border-bottom-color:var(--gold)}
-  .conds input{width:100%; background:transparent; border:none; border-bottom:1px solid var(--line);
-    color:var(--parch); font-family:'Spectral',serif; font-style:italic; padding:.4vh 0;
-    font-size:clamp(12px,1.05vw,17px); outline:none}
-  .conds input::placeholder{color:#5a615d}
-  .res{display:flex; flex-wrap:wrap; gap:.5vh 1.2vw; margin-top:.2vh}
-  .restrack{display:flex; align-items:center; gap:.5vw}
-  .restrack .l{font-family:'Cinzel',serif; font-size:clamp(9px,.75vw,12px);
-    letter-spacing:.1em; color:var(--muted)}
-  .pip{width:clamp(13px,1.1vw,18px); height:clamp(13px,1.1vw,18px); border-radius:50%;
-    border:1.5px solid var(--accent); cursor:pointer; transition:all .12s}
-  .pip.on{background:var(--accent)}
-  .pip.off{background:transparent; opacity:.4}
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .lamp {
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 10px 2px rgba(230,168,73,0.65);
+    align-self: center;
+  }
+  header h1 {
+    font-size: 19px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink);
+  }
+  header h1 b { color: var(--amber); font-weight: 650; }
+  .round-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 6px 4px 12px;
+  }
+  .round-pill .n { font-variant-numeric: tabular-nums; font-weight: 650; min-width: 1.5ch; text-align: center; }
 
-  .init{background:linear-gradient(180deg,var(--panel),var(--panel2));
-    border:1px solid var(--line); border-radius:14px; padding:1.2vh 1.2vw;
-    display:grid; grid-template-rows:auto auto 1fr; gap:1vh; min-height:0}
-  .init h2{font-family:'Cinzel',serif; font-weight:600; letter-spacing:.14em;
-    color:var(--gold); font-size:clamp(13px,1.2vw,20px); display:flex; align-items:center; gap:1vw}
-  .init h2 .dash{flex:1; height:1px; background:var(--line)}
-  .initbar{display:flex; flex-wrap:wrap; gap:.6vw; align-items:center}
-  .initbar input{background:#0a1112; border:1px solid var(--line); color:var(--parch);
-    border-radius:8px; padding:.55vh .6vw; font-family:'Spectral',serif; font-size:clamp(12px,1vw,16px)}
-  .initbar input.name{width:11vw; min-width:120px}
-  .initbar input.num{width:3.6vw; min-width:48px; text-align:center}
-  .rows{overflow-y:auto; display:flex; flex-direction:column; justify-content:flex-start; align-content:flex-start; gap:.7vh; padding-right:.4vw}
-  .row{display:flex; flex:0 0 auto; align-items:center; gap:1vw; padding:.8vh 1vw; border-radius:10px;
-    background:#0d1718; border:1px solid transparent}
-  .row.hero{border-left:3px solid var(--gold-dim)}
-  .row.cur{background:#1d2a17; border-color:var(--gold)}
-  .row .ini{font-family:'Cinzel',serif; font-weight:700; font-size:clamp(15px,1.5vw,24px);
-    color:var(--gold); min-width:2.4ch; text-align:center}
-  .row .rn{flex:1; font-size:clamp(14px,1.3vw,22px)}
-  .row.cur .rn{color:var(--gold)}
-  .row .mhp{display:flex; align-items:center; gap:.5vw; color:var(--muted); font-size:clamp(12px,1vw,16px)}
-  .row .mhp b{color:var(--parch); min-width:2.5ch; text-align:center}
-  .mini{padding:.2vh .55vw; font-size:clamp(11px,.85vw,14px); line-height:1}
-  .x{color:#6b716d; border-color:transparent; background:transparent;
-    font-size:clamp(15px,1.3vw,20px); padding:.1vh .5vw}
-  .x:hover{color:var(--hp-low); border-color:transparent}
-  .hint{color:#5a615d; font-style:italic; font-size:clamp(11px,.9vw,14px); padding:.5vh 1vw}
-  .rows::-webkit-scrollbar{width:8px} .rows::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px}
+  main { padding: 16px 18px 80px; max-width: 1180px; margin: 0 auto; }
+
+  /* ---- character grid ---- */
+  .chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 0; overflow: hidden;
+  }
+  .card.bloodied { border-color: #5a2f2c; }
+  .card.down { border-color: var(--red); }
+  .card-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; background: var(--panel-2);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .name-input {
+    font-size: 16px; font-weight: 650; background: transparent; border: 1px solid transparent;
+    border-radius: 6px; padding: 3px 6px; flex: 1; min-width: 0;
+  }
+  .name-input:hover { border-color: var(--line); }
+  .ac {
+    display: flex; flex-direction: column; align-items: center;
+    line-height: 1; gap: 2px;
+  }
+  .ac input { width: 46px; text-align: center; font-weight: 650; }
+  .ac .lbl { font-size: 10px; letter-spacing: 0.08em; color: var(--ink-faint); text-transform: uppercase; }
+  .x-btn {
+    background: transparent; border: 1px solid transparent; color: var(--ink-faint);
+    padding: 2px 7px; border-radius: 6px;
+  }
+  .x-btn:hover { color: var(--red); border-color: #4a2926; background: #1c1416; }
+
+  .card-body { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ---- HP ---- */
+  .hp-block { display: flex; align-items: center; gap: 12px; }
+  .hp-big { display: flex; align-items: baseline; gap: 3px; font-variant-numeric: tabular-nums; }
+  .hp-big .cur { font-size: 34px; font-weight: 700; }
+  .hp-big .sep { font-size: 20px; color: var(--ink-faint); }
+  .hp-big .max { font-size: 20px; color: var(--ink-dim); }
+  .hp-big .cur.ok { color: var(--green); }
+  .hp-big .cur.bloodied { color: var(--amber); }
+  .hp-big .cur.down { color: var(--red); }
+  .hp-edit { display: flex; flex-direction: column; gap: 5px; }
+  .hp-edit .row2 { display: flex; gap: 5px; align-items: center; }
+  .hp-edit input { width: 56px; text-align: center; }
+  .btn-dmg { border-color: #4a2926; }
+  .btn-dmg:hover { border-color: var(--red); }
+  .btn-heal { border-color: #2c4a36; }
+  .btn-heal:hover { border-color: var(--green); }
+  .temp {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #122230; border: 1px solid #25455e; border-radius: 6px; padding: 3px 7px;
+  }
+  .temp .lbl { font-size: 11px; color: var(--blue); letter-spacing: 0.04em; }
+  .temp input { width: 42px; text-align: center; }
+  .maxhp-edit { display: flex; align-items: center; gap: 5px; }
+  .maxhp-edit .lbl { font-size: 11px; color: var(--ink-faint); }
+
+  /* ---- pips ---- */
+  .res { display: flex; flex-direction: column; gap: 4px; }
+  .res-head { display: flex; align-items: center; gap: 6px; }
+  .res-name {
+    font-size: 13px; font-weight: 600; background: transparent; border: 1px solid transparent;
+    border-radius: 5px; padding: 2px 5px; flex: 1; min-width: 0;
+  }
+  .res-name:hover { border-color: var(--line); }
+  .reset-tag {
+    font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+    border-radius: 4px; padding: 1px 5px; cursor: pointer; user-select: none;
+    border: 1px solid var(--line); color: var(--ink-dim);
+  }
+  .reset-tag.short { color: var(--blue); border-color: #2c4a5e; }
+  .reset-tag.long  { color: var(--amber); border-color: var(--amber-dim); }
+  .reset-tag.none  { color: var(--ink-faint); }
+  .pips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .pip {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid var(--amber-dim); background: transparent;
+    padding: 0; transition: background .08s, border-color .08s;
+  }
+  .pip.filled { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 6px rgba(230,168,73,0.4); }
+  .pip:hover { border-color: var(--amber); }
+  .pip-min { background: transparent; border: 1px solid var(--line); width: 22px; height: 22px; border-radius: 6px; color: var(--ink-dim); line-height: 1; padding: 0; }
+  .res-x { color: var(--ink-faint); border: none; background: transparent; padding: 0 4px; }
+  .res-x:hover { color: var(--red); }
+
+  /* ---- hit dice / death / exhaustion / inspiration rows ---- */
+  .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mini {
+    background: var(--panel-2); border: 1px solid var(--line-soft);
+    border-radius: 8px; padding: 8px 9px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .mini .mh { display: flex; align-items: center; gap: 6px; }
+  .mini .mh .t { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
+  .pip-sq {
+    width: 18px; height: 18px; border-radius: 5px; padding: 0;
+    border: 2px solid var(--line); background: transparent;
+  }
+  .pip-sq.succ.filled { background: var(--green); border-color: var(--green); }
+  .pip-sq.fail.filled { background: var(--red); border-color: var(--red); }
+  .hd-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .hd-line .die { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+  .stepper { display: inline-flex; align-items: center; gap: 4px; }
+  .stepper button { width: 26px; height: 26px; padding: 0; font-weight: 700; }
+  .stepper .v { min-width: 1.5ch; text-align: center; font-variant-numeric: tabular-nums; font-weight: 650; }
+  .insp-toggle {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none;
+  }
+  .insp-dot {
+    width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--amber-dim);
+  }
+  .insp-dot.on { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px rgba(230,168,73,0.5); }
+
+  .add-res { align-self: flex-start; font-size: 12px; padding: 4px 9px; color: var(--ink-dim); }
+  .notes-wrap { display: flex; flex-direction: column; gap: 3px; }
+  .notes-wrap .nl { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .rest-row { display: flex; gap: 6px; }
+  .rest-row button { flex: 1; font-size: 12.5px; }
+  .btn-short { border-color: #2c4a5e; }
+  .btn-long { border-color: var(--amber-dim); }
+
+  .add-char {
+    border: 1px dashed var(--line); background: transparent; color: var(--ink-dim);
+    border-radius: var(--radius); min-height: 90px; font-size: 15px;
+  }
+  .add-char:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  /* ---- initiative ---- */
+  .init-panel {
+    margin-top: 22px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .init-head {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: var(--panel-2); border-bottom: 1px solid var(--line-soft);
+  }
+  .init-head h2 { font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-dim); }
+  .init-body { padding: 8px 8px 12px; }
+  .init-list { display: flex; flex-direction: column; }
+  .combatant {
+    display: flex; align-items: center; gap: 8px; padding: 7px 8px;
+    border-radius: 8px; border: 1px solid transparent;
+  }
+  .combatant + .combatant { margin-top: 2px; }
+  .combatant.active { background: #1b2a18; border-color: #3c5a2f; }
+  .combatant.active .turn-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .turn-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+  .combatant .init-v { width: 52px; }
+  .combatant .init-v input { width: 48px; text-align: center; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .combatant .cname { flex: 1; min-width: 0; }
+  .combatant .cname input { width: 100%; }
+  .combatant.pc .cname input { color: var(--amber); }
+  .chp { display: flex; align-items: center; gap: 3px; }
+  .chp input { width: 46px; text-align: center; }
+  .chp .s { color: var(--ink-faint); }
+  .combatant .note input { width: 150px; }
+  .empty-init { color: var(--ink-faint); padding: 14px; text-align: center; font-style: italic; }
+
+  /* ---- save/load bar ---- */
+  .savebar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+    background: rgba(13,20,25,0.94); backdrop-filter: blur(6px);
+    border-top: 1px solid var(--line); padding: 9px 18px;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .savebar .grp { display: flex; gap: 6px; align-items: center; }
+  .savebar .sep-v { width: 1px; height: 22px; background: var(--line); }
+  .save-status { font-size: 12px; color: var(--ink-faint); }
+  .save-status.ok { color: var(--green); }
+  .save-status.warn { color: var(--amber); }
+  .btn-amber { border-color: var(--amber-dim); color: var(--amber); }
+
+  /* ---- modal (paste / load) ---- */
+  .modal-bg {
+    position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); width: min(620px, 100%); padding: 18px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .modal h3 { font-size: 16px; }
+  .modal textarea { min-height: 180px; font-family: ui-monospace, monospace; font-size: 12px; }
+  .modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (max-width: 560px) {
+    .chars { grid-template-columns: 1fr; }
+    .combatant .note { display: none; }
+  }
 </style>
 </head>
 <body>
-  <div class="hdr">
-    <div class="brand">WESTMERE<small>the table screen</small></div>
-    <div class="scene"><input id="sceneInput" /></div>
-    <div class="turnbadge"><div class="r" id="roundLine">EXPLORATION</div><div class="t" id="turnLine">&mdash;</div></div>
-  </div>
-
-  <div class="party" id="party"></div>
-
-  <div class="init">
-    <h2>Initiative <span class="dash"></span>
-      <button id="startBtn" class="gold" onclick="startCombat()">Start combat</button>
-      <button onclick="nextTurn()">Next turn &rsaquo;</button>
-      <button onclick="endCombat()">End</button>
-      <button onclick="resetBoard()">Restore party</button>
-    </h2>
-    <div class="initbar">
-      <input class="name" id="addName" placeholder="Add combatant&hellip;" onkeydown="if(event.key==='Enter')addCombatant()">
-      <input class="num" id="addInit" placeholder="init" inputmode="numeric">
-      <input class="num" id="addHp" placeholder="hp" inputmode="numeric">
-      <button onclick="addCombatant()">+ Add</button>
-      <span class="hint">Enter each PC's initiative in their row below, then "Start combat"</span>
+<header>
+  <div class="row">
+    <span class="lamp" aria-hidden="true"></span>
+    <div class="brand"><h1><b>Westmere</b> Tracker</h1></div>
+    <div class="spacer"></div>
+    <div class="round-pill">
+      <span class="faint tiny" style="text-transform:uppercase;letter-spacing:.06em">Round</span>
+      <span class="n" id="roundN">1</span>
+      <button id="roundMinus" title="Previous round">–</button>
+      <button id="roundPlus" title="Next round">+</button>
     </div>
-    <div class="rows" id="rows"></div>
   </div>
+</header>
+
+<main>
+  <div class="chars" id="chars"></div>
+
+  <div class="init-panel">
+    <div class="init-head">
+      <h2>Initiative &amp; Combat</h2>
+      <div class="spacer"></div>
+      <button id="addPCs" title="Add all characters to the order">Add PCs</button>
+      <button id="addFoe">+ Foe</button>
+      <button id="sortInit" title="Sort highest initiative first">Sort</button>
+      <button id="nextTurn" class="btn-amber">Next turn ▸</button>
+      <button id="clearInit">Clear</button>
+    </div>
+    <div class="init-body">
+      <div class="init-list" id="initList"></div>
+    </div>
+  </div>
+</main>
+
+<div class="savebar">
+  <div class="grp">
+    <button class="btn-long" id="restLongAll" title="Full HP, reset all resources, exhaustion −1, recover half hit dice">Long rest · all</button>
+    <button class="btn-short" id="restShortAll" title="Reset short-rest resources for everyone">Short rest · all</button>
+  </div>
+  <div class="sep-v"></div>
+  <div class="grp">
+    <button id="addCharBtn">+ Character</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="save-status" id="saveStatus">—</span>
+  <div class="sep-v"></div>
+  <div class="grp">
+    <button class="btn-amber" id="copyState" title="Copy the full state as JSON to paste into your session log / project knowledge">Copy state</button>
+    <button id="loadState" title="Paste a saved JSON blob to restore">Load state…</button>
+    <button id="exportState" title="Download the state as a .json file">Export ⭳</button>
+    <button id="importState" title="Import a .json file">Import ⭱</button>
+    <button id="resetState" title="Wipe and reload the default seed">Reset</button>
+  </div>
+  <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Load state</h3>
+    <p class="muted tiny" id="modalHint">Paste a saved JSON blob below and choose Load. This replaces the current table state.</p>
+    <textarea id="modalText" placeholder="Paste JSON here…" spellcheck="false"></textarea>
+    <div class="actions">
+      <button id="modalCancel">Cancel</button>
+      <button class="btn-amber" id="modalConfirm">Load</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const S = {
-  scene:"A foggy morning in Westmere \u2014 Della three nights gone.",
-  inCombat:false, round:1, turn:0,
-  party:[
-    {id:"bram", name:"Bram Holt", sub:"Mountain Dwarf \u00b7 Champion Fighter 3",
-     ac:18, hp:31, max:31, color:"#5f93cc", conds:"", lastRoll:"",
-     hd:{die:10, total:3, remaining:3, conMod:3},
-     res:[{l:"Second Wind", p:[1], sr:true}, {l:"Action Surge", p:[1], sr:true}]},
-    {id:"doran", name:"Doran Vale", sub:"Half-Elf \u00b7 College of Lore Bard 3",
-     ac:14, hp:21, max:21, color:"#a182d8", conds:"", lastRoll:"",
-     hd:{die:8, total:3, remaining:3, conMod:1},
-     res:[{l:"Bardic", p:[1,1,1]}, {l:"Slots I", p:[1,1,1,1]}, {l:"Slots II", p:[1,1]}]}
-  ],
-  init:[ {name:"Bram", ini:null, hp:null, max:null, pc:true},
-         {name:"Doran", ini:null, hp:null, max:null, pc:true} ]
-};
-const $ = id => document.getElementById(id);
-$("sceneInput").value = S.scene;
-$("sceneInput").addEventListener("input", e => S.scene = e.target.value);
-function hpColor(r){ return r>0.5 ? "var(--hp-good)" : r>0.25 ? "var(--hp-mid)" : "var(--hp-low)"; }
+"use strict";
+(function () {
+  const LS_KEY = "westmere-tracker:v1";   // namespaced so it can't collide with other kentp111.github.io pages
+  const DIE_OPTIONS = ["d6", "d8", "d10", "d12"];
 
-function renderParty(){
-  const host = $("party"); host.innerHTML = "";
-  S.party.forEach((c,ci) => {
-    const r = c.max ? c.hp/c.max : 0;
-    const card = document.createElement("div");
-    card.className = "pc"; card.style.setProperty("--accent", c.color);
-    const resHtml = c.res.map((t,ti) =>
-      `<div class="restrack"><span class="l">${t.l}</span>` +
-      t.p.map((v,pi)=>`<span class="pip ${v?'on':'off'}" onclick="togglePip(${ci},${ti},${pi})"></span>`).join("") +
-      `</div>`).join("");
-    const hdPips = Array.from({length:c.hd.total},(_,k)=>
-      `<span class="pip hd-pip ${k<c.hd.remaining?'on':'off'}"></span>`).join("");
-    const rollMsg = c.lastRoll ? `<span class="roll-result">${c.lastRoll}</span>` : '';
-    card.innerHTML = `
-      <div class="pchead">
-        <div><div class="nm">${c.name}</div><div class="sub">${c.sub}</div></div>
-        <div class="ac"><div class="lbl">AC</div><div class="val">${c.ac}</div></div>
-      </div>
-      <div class="hpwrap"><span class="hpnum" style="color:${hpColor(r)}">${c.hp}</span>
-        <span class="hpmax">/ ${c.max}</span><span class="hplabel">HIT POINTS</span></div>
-      <div class="bar"><i style="width:${Math.max(0,r*100)}%;background:${hpColor(r)}"></i></div>
-      <div class="ctl">
-        <input id="amt-${c.id}" inputmode="numeric" placeholder="#">
-        <button class="dmg" onclick="adjust(${ci},-1,true)">Damage</button>
-        <button class="heal" onclick="adjust(${ci},1,true)">Heal</button>
-        <button onclick="adjust(${ci},-1,false)">&minus;1</button>
-        <button onclick="adjust(${ci},1,false)">+1</button>
-        <button onclick="shortRest(${ci})">Short rest</button>
-        <button class="gold" onclick="longRest(${ci})">Long rest</button>
-      </div>
-      <div class="conds"><input value="${c.conds.replace(/"/g,'&quot;')}" placeholder="conditions \u2014 prone, frightened, blessed\u2026" oninput="S.party[${ci}].conds=this.value"></div>
-      <div class="res">
-        ${resHtml}
-        <div class="restrack">
-          <span class="l">Hit Dice d${c.hd.die}</span>
-          ${hdPips}
-          <button class="mini" onclick="spendHD(${ci})" ${c.hd.remaining===0||c.hp>=c.max?'disabled':''}>Spend</button>
-          ${rollMsg}
-        </div>
-      </div>`;
-    host.appendChild(card);
+  // ---------- seed (placeholder data — every field is editable in the UI) ----------
+  // Doran & Bram seeded at their current level-3 (2014) values as a starting point.
+  // Overwrite freely once the 2024 rebuild / new roster is settled.
+  function seed() {
+    return {
+      version: 1,
+      savedAt: null,
+      round: 1,
+      activeId: null,
+      characters: [
+        {
+          id: uid(), name: "Bram Holt", ac: 18, maxHp: 31, curHp: 31, tempHp: 0,
+          hd: { die: "d10", max: 3, used: 0, conMod: 3 },
+          exhaustion: 0, inspiration: false,
+          death: { succ: 0, fail: 0 },
+          notes: "Mastery reminders, conditions, concentration…",
+          resources: [
+            { id: uid(), name: "Second Wind", max: 1, used: 0, reset: "short" },
+            { id: uid(), name: "Action Surge", max: 1, used: 0, reset: "short" }
+          ]
+        },
+        {
+          id: uid(), name: "Doran Vale", ac: 14, maxHp: 21, curHp: 21, tempHp: 0,
+          hd: { die: "d8", max: 3, used: 0, conMod: 1 },
+          exhaustion: 0, inspiration: false,
+          death: { succ: 0, fail: 0 },
+          notes: "Concentration, conditions…",
+          resources: [
+            { id: uid(), name: "Bardic Inspiration", max: 3, used: 0, reset: "long" },
+            { id: uid(), name: "Slots · 1st", max: 4, used: 0, reset: "long" },
+            { id: uid(), name: "Slots · 2nd", max: 2, used: 0, reset: "long" }
+          ]
+        }
+      ],
+      combat: []   // [{id,name,init,hp,maxHp,note,pc}]
+    };
+  }
+
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+
+  // ---------- state + persistence ----------
+  let state = load() || seed();
+  let saveTimer = null;
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      return migrate(obj);
+    } catch (e) { return null; }
+  }
+  function migrate(obj) {
+    // tolerant rehydrate: fill any missing fields so older/partial blobs still load
+    if (!obj || typeof obj !== "object") return null;
+    obj.version = 1;
+    obj.round = obj.round || 1;
+    obj.activeId = obj.activeId || null;
+    obj.characters = (obj.characters || []).map(c => ({
+      id: c.id || uid(), name: c.name || "Unnamed",
+      ac: num(c.ac, 10), maxHp: num(c.maxHp, 1), curHp: num(c.curHp, num(c.maxHp, 1)), tempHp: num(c.tempHp, 0),
+      hd: { die: (c.hd && c.hd.die) || "d8", max: num(c.hd && c.hd.max, 1), used: num(c.hd && c.hd.used, 0), conMod: num(c.hd && c.hd.conMod, 0) },
+      exhaustion: num(c.exhaustion, 0), inspiration: !!c.inspiration,
+      death: { succ: num(c.death && c.death.succ, 0), fail: num(c.death && c.death.fail, 0) },
+      notes: c.notes || "",
+      resources: (c.resources || []).map(r => ({ id: r.id || uid(), name: r.name || "Resource", max: num(r.max, 1), used: num(r.used, 0), reset: r.reset || "long" }))
+    }));
+    obj.combat = (obj.combat || []).map(x => ({ id: x.id || uid(), name: x.name || "Foe", init: num(x.init, 0), hp: num(x.hp, 0), maxHp: num(x.maxHp, 0), note: x.note || "", pc: !!x.pc }));
+    return obj;
+  }
+  function num(v, d) { v = parseInt(v, 10); return isNaN(v) ? d : v; }
+
+  function save() {
+    state.savedAt = new Date().toISOString();
+    let ok = false;
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); ok = true; } catch (e) { ok = false; }
+    setStatus(ok ? "saved" : "nostore");
+  }
+  function queueSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 250);
+  }
+  function setStatus(kind) {
+    const el = document.getElementById("saveStatus");
+    if (kind === "saved") {
+      const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      el.textContent = "Saved on this device · " + t;
+      el.className = "save-status ok";
+    } else if (kind === "nostore") {
+      el.textContent = "Auto-save off (browser blocked storage) — use Copy / Export to keep state";
+      el.className = "save-status warn";
+    }
+  }
+
+  // ---------- helpers ----------
+  function findChar(id) { return state.characters.find(c => c.id === id); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+  // ---------- rest logic ----------
+  function shortRest(c) {
+    c.resources.forEach(r => { if (r.reset === "short") r.used = 0; });
+  }
+  function longRest(c) {
+    c.curHp = c.maxHp; c.tempHp = 0;
+    c.resources.forEach(r => { if (r.reset === "short" || r.reset === "long") r.used = 0; });
+    c.death = { succ: 0, fail: 0 };
+    c.exhaustion = Math.max(0, c.exhaustion - 1);           // 2024: long rest removes 1 level
+    const recover = Math.max(1, Math.floor(c.hd.max / 2));  // standard: half (round down), min 1
+    c.hd.used = Math.max(0, c.hd.used - recover);
+  }
+
+  // ================= RENDER =================
+  function render() {
+    renderChars();
+    renderCombat();
+    document.getElementById("roundN").textContent = state.round;
+  }
+
+  function renderChars() {
+    const wrap = document.getElementById("chars");
+    wrap.innerHTML = "";
+    state.characters.forEach(c => wrap.appendChild(charCard(c)));
+  }
+
+  function charCard(c) {
+    const card = el("div", "card");
+    const ratio = c.maxHp > 0 ? c.curHp / c.maxHp : 0;
+    if (c.curHp <= 0) card.classList.add("down");
+    else if (ratio <= 0.5) card.classList.add("bloodied");
+
+    // --- head: name + AC + remove ---
+    const head = el("div", "card-head");
+    const nameI = el("input", "name-input"); nameI.value = c.name;
+    nameI.addEventListener("input", () => { c.name = nameI.value; queueSave(); });
+    const ac = el("div", "ac");
+    const acI = el("input"); acI.type = "number"; acI.value = c.ac;
+    acI.addEventListener("input", () => { c.ac = num(acI.value, c.ac); queueSave(); });
+    ac.appendChild(acI); ac.appendChild(el("span", "lbl", "AC"));
+    const xb = el("button", "x-btn", "✕"); xb.title = "Remove character";
+    xb.addEventListener("click", () => {
+      if (confirm("Remove " + c.name + " from the tracker?")) {
+        state.characters = state.characters.filter(x => x.id !== c.id);
+        save(); render();
+      }
+    });
+    head.append(nameI, ac, xb);
+
+    // --- body ---
+    const body = el("div", "card-body");
+
+    // HP block
+    const hpBlock = el("div", "hp-block");
+    const big = el("div", "hp-big");
+    const cur = el("span", "cur");
+    cur.textContent = c.curHp;
+    cur.classList.add(c.curHp <= 0 ? "down" : (ratio <= 0.5 ? "bloodied" : "ok"));
+    big.append(cur, el("span", "sep", "/"), el("span", "max", String(c.maxHp)));
+    if (c.tempHp > 0) {
+      const t = el("span", "temp");
+      t.append(el("span", "lbl", "TEMP"), document.createTextNode(" +" + c.tempHp));
+      big.appendChild(t);
+    }
+    const hpEdit = el("div", "hp-edit");
+    const amt = el("input"); amt.type = "number"; amt.value = ""; amt.placeholder = "0"; amt.title = "Amount";
+    const dmg = el("button", "btn-dmg", "Damage");
+    const heal = el("button", "btn-heal", "Heal");
+    function applyHp(sign) {
+      let n = num(amt.value, 0); if (n <= 0) return;
+      if (sign < 0) {
+        // damage soaks temp HP first
+        if (c.tempHp > 0) { const used = Math.min(c.tempHp, n); c.tempHp -= used; n -= used; }
+        c.curHp = Math.max(0, c.curHp - n);
+      } else {
+        c.curHp = Math.min(c.maxHp, c.curHp + n);
+      }
+      amt.value = ""; save(); render();
+    }
+    dmg.addEventListener("click", () => applyHp(-1));
+    heal.addEventListener("click", () => applyHp(1));
+    amt.addEventListener("keydown", e => { if (e.key === "Enter") applyHp(1); });
+    const row2 = el("div", "row2"); row2.append(amt, dmg, heal);
+
+    const tempRow = el("div", "row2");
+    const tempLbl = el("span", "maxhp-edit");
+    const tI = el("input"); tI.type = "number"; tI.value = c.tempHp; tI.title = "Temp HP";
+    tI.addEventListener("input", () => { c.tempHp = Math.max(0, num(tI.value, 0)); queueSave(); refreshCardHp(card, c); });
+    tempLbl.append(el("span", "lbl", "Temp"), tI);
+    const maxEdit = el("span", "maxhp-edit");
+    const mI = el("input"); mI.type = "number"; mI.value = c.maxHp; mI.title = "Max HP";
+    mI.addEventListener("input", () => { c.maxHp = Math.max(1, num(mI.value, c.maxHp)); c.curHp = Math.min(c.curHp, c.maxHp); save(); render(); });
+    maxEdit.append(el("span", "lbl", "Max"), mI);
+    tempRow.append(tempLbl, maxEdit);
+
+    hpEdit.append(row2, tempRow);
+    hpBlock.append(big, hpEdit);
+    body.appendChild(hpBlock);
+
+    // resources
+    c.resources.forEach(r => body.appendChild(resourceRow(c, r)));
+    const addRes = el("button", "add-res", "+ resource");
+    addRes.addEventListener("click", () => {
+      c.resources.push({ id: uid(), name: "New resource", max: 1, used: 0, reset: "long" });
+      save(); render();
+    });
+    body.appendChild(addRes);
+
+    // mini-grid: hit dice + exhaustion ; death saves + inspiration
+    const grid = el("div", "mini-grid");
+    grid.append(hitDiceMini(c), exhaustionMini(c), deathMini(c), inspirationMini(c));
+    body.appendChild(grid);
+
+    // notes
+    const nw = el("div", "notes-wrap");
+    nw.appendChild(el("span", "nl", "Notes"));
+    const ta = el("textarea"); ta.value = c.notes;
+    ta.addEventListener("input", () => { c.notes = ta.value; queueSave(); });
+    nw.appendChild(ta);
+    body.appendChild(nw);
+
+    // per-character rest
+    const rest = el("div", "rest-row");
+    const sr = el("button", "btn-short", "Short rest");
+    sr.addEventListener("click", () => { shortRest(c); save(); render(); });
+    const lr = el("button", "btn-long", "Long rest");
+    lr.addEventListener("click", () => { longRest(c); save(); render(); });
+    rest.append(sr, lr);
+    body.appendChild(rest);
+
+    card.append(head, body);
+    return card;
+  }
+
+  function refreshCardHp(card, c) {
+    // light touch: re-render is simplest and cheap at this scale
+  }
+
+  function resourceRow(c, r) {
+    const box = el("div", "res");
+    const rh = el("div", "res-head");
+    const nm = el("input", "res-name"); nm.value = r.name;
+    nm.addEventListener("input", () => { r.name = nm.value; queueSave(); });
+    const tag = el("span", "reset-tag " + r.reset, r.reset === "none" ? "no reset" : r.reset);
+    tag.title = "Click to cycle reset: short → long → no reset";
+    tag.addEventListener("click", () => {
+      r.reset = r.reset === "short" ? "long" : r.reset === "long" ? "none" : "short";
+      save(); render();
+    });
+    const rx = el("button", "res-x", "✕"); rx.title = "Remove resource";
+    rx.addEventListener("click", () => { c.resources = c.resources.filter(x => x.id !== r.id); save(); render(); });
+    rh.append(nm, tag, rx);
+
+    const pips = el("div", "pips");
+    const dec = el("button", "pip-min", "–"); dec.title = "Fewer pips";
+    dec.addEventListener("click", () => { r.max = Math.max(0, r.max - 1); r.used = Math.min(r.used, r.max); save(); render(); });
+    pips.appendChild(dec);
+    for (let i = 0; i < r.max; i++) {
+      const p = el("button", "pip" + (i < r.max - r.used ? " filled" : ""));
+      p.title = (i < r.max - r.used) ? "Available — click to spend" : "Spent — click to restore";
+      p.addEventListener("click", () => {
+        const available = r.max - r.used;
+        if (i < available) r.used++; else r.used--;
+        r.used = clamp(r.used, 0, r.max);
+        save(); render();
+      });
+      pips.appendChild(p);
+    }
+    const inc = el("button", "pip-min", "+"); inc.title = "More pips";
+    inc.addEventListener("click", () => { r.max += 1; save(); render(); });
+    pips.appendChild(inc);
+
+    box.append(rh, pips);
+    return box;
+  }
+
+  function hitDiceMini(c) {
+    const m = el("div", "mini");
+    const mh = el("div", "mh"); mh.appendChild(el("span", "t", "Hit Dice"));
+    m.appendChild(mh);
+    const line = el("div", "hd-line");
+    // pips: available = max - used
+    for (let i = 0; i < c.hd.max; i++) {
+      const p = el("button", "pip" + (i < c.hd.max - c.hd.used ? " filled" : ""));
+      p.style.width = "18px"; p.style.height = "18px";
+      p.title = (i < c.hd.max - c.hd.used) ? "Spend a hit die" : "Restore";
+      p.addEventListener("click", () => {
+        const avail = c.hd.max - c.hd.used;
+        if (i < avail) c.hd.used++; else c.hd.used--;
+        c.hd.used = clamp(c.hd.used, 0, c.hd.max);
+        save(); render();
+      });
+      line.appendChild(p);
+    }
+    const die = el("span", "die", c.hd.die + " +" + c.hd.conMod);
+    line.appendChild(die);
+    m.appendChild(line);
+
+    const spend = el("button"); spend.style.fontSize = "12px"; spend.textContent = "Spend → heal";
+    spend.title = "Spend one hit die and roll healing";
+    spend.addEventListener("click", () => {
+      if (c.hd.max - c.hd.used <= 0) { alert("No hit dice left."); return; }
+      const sides = parseInt(c.hd.die.slice(1), 10);
+      const roll = 1 + Math.floor(Math.random() * sides);
+      const heal = Math.max(0, roll + c.hd.conMod);
+      c.hd.used++;
+      c.curHp = Math.min(c.maxHp, c.curHp + heal);
+      save(); render();
+      alert("Rolled " + roll + " on " + c.hd.die + " +" + c.hd.conMod + " = " + heal + " HP.");
+    });
+    m.appendChild(spend);
+
+    // editors
+    const edit = el("div", "row");
+    const maxI = el("input"); maxI.type = "number"; maxI.value = c.hd.max; maxI.style.width = "44px"; maxI.title = "Max hit dice";
+    maxI.addEventListener("input", () => { c.hd.max = Math.max(0, num(maxI.value, c.hd.max)); c.hd.used = Math.min(c.hd.used, c.hd.max); save(); render(); });
+    const dieS = el("select");
+    DIE_OPTIONS.forEach(d => { const o = el("option", null, d); o.value = d; if (d === c.hd.die) o.selected = true; dieS.appendChild(o); });
+    dieS.addEventListener("change", () => { c.hd.die = dieS.value; queueSave(); });
+    const conI = el("input"); conI.type = "number"; conI.value = c.hd.conMod; conI.style.width = "44px"; conI.title = "CON mod added to each die";
+    conI.addEventListener("input", () => { c.hd.conMod = num(conI.value, c.hd.conMod); queueSave(); });
+    edit.append(el("span", "tiny faint", "max"), maxI, dieS, el("span", "tiny faint", "CON"), conI);
+    m.appendChild(edit);
+    return m;
+  }
+
+  function exhaustionMini(c) {
+    const m = el("div", "mini");
+    const mh = el("div", "mh"); mh.appendChild(el("span", "t", "Exhaustion"));
+    m.appendChild(mh);
+    const step = el("div", "stepper");
+    const minus = el("button", null, "–");
+    minus.addEventListener("click", () => { c.exhaustion = clamp(c.exhaustion - 1, 0, 6); save(); render(); });
+    const v = el("span", "v", String(c.exhaustion));
+    if (c.exhaustion >= 1) v.style.color = c.exhaustion >= 6 ? "var(--red)" : "var(--amber)";
+    const plus = el("button", null, "+");
+    plus.addEventListener("click", () => { c.exhaustion = clamp(c.exhaustion + 1, 0, 6); save(); render(); });
+    step.append(minus, v, plus);
+    m.appendChild(step);
+    const hint = el("span", "tiny faint");
+    hint.textContent = c.exhaustion === 0 ? "none" : ("−" + (c.exhaustion * 2) + " to d20 rolls");
+    m.appendChild(hint);
+    return m;
+  }
+
+  function deathMini(c) {
+    const m = el("div", "mini");
+    const mh = el("div", "mh"); mh.appendChild(el("span", "t", "Death Saves"));
+    const clr = el("button"); clr.style.fontSize = "11px"; clr.style.padding = "2px 6px"; clr.textContent = "clear";
+    clr.addEventListener("click", () => { c.death = { succ: 0, fail: 0 }; save(); render(); });
+    mh.append(el("span", "spacer"), clr);
+    m.appendChild(mh);
+    const mkRow = (kind) => {
+      const r = el("div", "row");
+      r.appendChild(el("span", "tiny faint", kind === "succ" ? "save" : "fail"));
+      for (let i = 0; i < 3; i++) {
+        const filled = (kind === "succ" ? c.death.succ : c.death.fail) > i;
+        const p = el("button", "pip-sq " + (kind === "succ" ? "succ" : "fail") + (filled ? " filled" : ""));
+        p.addEventListener("click", () => {
+          const cur = kind === "succ" ? c.death.succ : c.death.fail;
+          const nv = (i + 1 === cur) ? i : i + 1;   // click filled-top to step down
+          if (kind === "succ") c.death.succ = nv; else c.death.fail = nv;
+          save(); render();
+        });
+        r.appendChild(p);
+      }
+      return r;
+    };
+    m.append(mkRow("succ"), mkRow("fail"));
+    return m;
+  }
+
+  function inspirationMini(c) {
+    const m = el("div", "mini");
+    const mh = el("div", "mh"); mh.appendChild(el("span", "t", "Heroic Insp."));
+    m.appendChild(mh);
+    const t = el("div", "insp-toggle");
+    const dot = el("span", "insp-dot" + (c.inspiration ? " on" : ""));
+    t.append(dot, el("span", "tiny", c.inspiration ? "have it" : "none"));
+    t.addEventListener("click", () => { c.inspiration = !c.inspiration; save(); render(); });
+    m.appendChild(t);
+    return m;
+  }
+
+  // ---------- combat / initiative ----------
+  function renderCombat() {
+    const list = document.getElementById("initList");
+    list.innerHTML = "";
+    if (state.combat.length === 0) {
+      list.appendChild(el("div", "empty-init", "No combatants. Add foes, or pull the party in with “Add PCs.”"));
+      return;
+    }
+    state.combat.forEach(x => {
+      const row = el("div", "combatant" + (x.pc ? " pc" : "") + (x.id === state.activeId ? " active" : ""));
+      row.appendChild(el("span", "turn-dot"));
+      const iv = el("div", "init-v");
+      const iI = el("input"); iI.type = "number"; iI.value = x.init;
+      iI.addEventListener("input", () => { x.init = num(iI.value, 0); queueSave(); });
+      iv.appendChild(iI); row.appendChild(iv);
+      const cn = el("div", "cname");
+      const nI = el("input"); nI.value = x.name;
+      nI.addEventListener("input", () => { x.name = nI.value; queueSave(); });
+      cn.appendChild(nI); row.appendChild(cn);
+      const hp = el("div", "chp");
+      const h1 = el("input"); h1.type = "number"; h1.value = x.hp; h1.title = "HP";
+      h1.addEventListener("input", () => { x.hp = num(h1.value, 0); queueSave(); });
+      const h2 = el("input"); h2.type = "number"; h2.value = x.maxHp; h2.title = "Max HP";
+      h2.addEventListener("input", () => { x.maxHp = num(h2.value, 0); queueSave(); });
+      hp.append(h1, el("span", "s", "/"), h2); row.appendChild(hp);
+      const nt = el("div", "note");
+      const ntI = el("input"); ntI.value = x.note; ntI.placeholder = "note";
+      ntI.addEventListener("input", () => { x.note = ntI.value; queueSave(); });
+      nt.appendChild(ntI); row.appendChild(nt);
+      const rx = el("button", "x-btn", "✕");
+      rx.addEventListener("click", () => { state.combat = state.combat.filter(y => y.id !== x.id); if (state.activeId === x.id) state.activeId = null; save(); render(); });
+      row.appendChild(rx);
+      list.appendChild(row);
+    });
+  }
+
+  // ================= WIRE-UP =================
+  document.getElementById("roundPlus").addEventListener("click", () => { state.round++; save(); render(); });
+  document.getElementById("roundMinus").addEventListener("click", () => { state.round = Math.max(1, state.round - 1); save(); render(); });
+
+  document.getElementById("addFoe").addEventListener("click", () => {
+    state.combat.push({ id: uid(), name: "Foe", init: 10, hp: 11, maxHp: 11, note: "", pc: false });
+    save(); render();
   });
-}
-function adjust(ci, sign, useInput){
-  const c = S.party[ci]; let amt = 1;
-  if(useInput){ const el=$("amt-"+c.id); amt=parseInt(el.value,10)||0; el.value=""; }
-  c.hp = Math.max(0, Math.min(c.max, c.hp + sign*amt)); renderParty();
-}
-function togglePip(ci,ti,pi){ const p=S.party[ci].res[ti].p; p[pi]=p[pi]?0:1; renderParty(); }
-
-function spendHD(ci){
-  const c = S.party[ci];
-  if(c.hd.remaining<=0) return;
-  const roll = Math.floor(Math.random()*c.hd.die)+1;
-  const raw = Math.max(1, roll + c.hd.conMod);
-  const before = c.hp;
-  c.hp = Math.min(c.max, c.hp + raw);
-  const gained = c.hp - before;
-  c.hd.remaining--;
-  c.lastRoll = `d${c.hd.die}: ${roll}+${c.hd.conMod} \u2192 +${gained} hp`;
-  renderParty();
-}
-
-function shortRest(ci){
-  const c = S.party[ci];
-  // Restore short-rest resources (Fighter: Second Wind, Action Surge)
-  // Bardic Inspiration and spell slots are long-rest only at level 3
-  c.res.forEach(t=>{ if(t.sr) t.p=t.p.map(()=>1); });
-  c.lastRoll = "";
-  renderParty();
-}
-
-function longRest(ci){
-  const c=S.party[ci];
-  c.hp=c.max;
-  c.hd.remaining=c.hd.total;
-  c.lastRoll="";
-  c.res.forEach(t=>t.p=t.p.map(()=>1));
-  renderParty();
-}
-
-function sortInit(){ S.init.sort((a,b)=>(b.ini??-99)-(a.ini??-99)); }
-function addCombatant(){
-  const n=$("addName").value.trim(); if(!n){ $("addName").focus(); return; }
-  const ini=parseInt($("addInit").value,10); const hp=parseInt($("addHp").value,10);
-  S.init.push({name:n, ini:isNaN(ini)?null:ini, hp:isNaN(hp)?null:hp, max:isNaN(hp)?null:hp, pc:false});
-  $("addName").value=""; $("addInit").value=""; $("addHp").value="";
-  if(!S.inCombat) sortInit(); renderInit();
-}
-function removeInit(i){ S.init.splice(i,1); if(S.turn>=S.init.length)S.turn=0; renderInit(); }
-function monHp(i,d){ const m=S.init[i]; if(m.hp==null)return; m.hp=Math.max(0,m.hp+d); renderInit(); }
-function startCombat(){ if(!S.init.length)return; sortInit(); S.inCombat=true; S.round=1; S.turn=0; renderInit(); }
-function nextTurn(){ if(!S.inCombat||!S.init.length)return; S.turn++; if(S.turn>=S.init.length){S.turn=0;S.round++;} renderInit(); }
-function endCombat(){ S.inCombat=false; S.round=1; S.turn=0; S.init=S.init.filter(e=>e.pc); S.init.forEach(e=>e.ini=null); renderInit(); }
-function resetBoard(){ const had=new Set(S.init.filter(e=>e.pc).map(e=>e.name));
-  if(!had.has("Doran")) S.init.unshift({name:"Doran",ini:null,hp:null,max:null,pc:true});
-  if(!had.has("Bram")) S.init.unshift({name:"Bram",ini:null,hp:null,max:null,pc:true});
-  renderInit(); }
-
-function renderInit(){
-  const rows=$("rows"); rows.innerHTML="";
-  if(!S.init.length){ rows.innerHTML='<div class="hint">No combatants yet. Add foes above, set each PC\'s initiative, then Start combat.</div>'; }
-  S.init.forEach((e,i)=>{
-    const cur = S.inCombat && i===S.turn;
-    const row=document.createElement("div");
-    row.className="row"+(e.pc?" hero":"")+(cur?" cur":"");
-    const iniCell = e.pc
-      ? `<input type="number" class="ini-edit" value="${e.ini!==null&&e.ini!==undefined?e.ini:''}" placeholder="\u2013"
-             oninput="var v=parseInt(this.value,10);S.init[${i}].ini=isNaN(v)?null:v"
-             onchange="if(!S.inCombat)sortInit();renderInit();">`
-      : `<span class="ini">${e.ini??"\u2013"}</span>`;
-    const hp = e.hp!=null ? `<div class="mhp"><button class="mini" onclick="monHp(${i},-1)">&minus;</button><b>${e.hp}</b><button class="mini" onclick="monHp(${i},1)">+</button></div>` : "";
-    const x = e.pc ? "" : `<button class="x" onclick="removeInit(${i})">&times;</button>`;
-    row.innerHTML=`${iniCell}<span class="rn">${e.name}</span>${hp}${x}`;
-    rows.appendChild(row);
+  document.getElementById("addPCs").addEventListener("click", () => {
+    state.characters.forEach(c => {
+      if (!state.combat.some(x => x.pc && x.name === c.name)) {
+        state.combat.push({ id: uid(), name: c.name, init: 0, hp: c.curHp, maxHp: c.maxHp, note: "", pc: true });
+      }
+    });
+    save(); render();
   });
-  const order = S.inCombat ? S.init[S.turn] : null;
-  $("roundLine").textContent = S.inCombat ? ("ROUND "+S.round) : "EXPLORATION";
-  $("turnLine").innerHTML = order ? (order.name+"\u2019s turn") : "\u2014";
-  $("startBtn").textContent = S.inCombat ? "Restart" : "Start combat";
-}
-renderParty(); renderInit();
+  document.getElementById("sortInit").addEventListener("click", () => {
+    state.combat.sort((a, b) => b.init - a.init); save(); render();
+  });
+  document.getElementById("nextTurn").addEventListener("click", () => {
+    if (state.combat.length === 0) return;
+    const order = state.combat;
+    let idx = order.findIndex(x => x.id === state.activeId);
+    if (idx === -1) { state.activeId = order[0].id; save(); render(); return; }
+    if (idx === order.length - 1) { state.round++; state.activeId = order[0].id; }
+    else { state.activeId = order[idx + 1].id; }
+    save(); render();
+  });
+  document.getElementById("clearInit").addEventListener("click", () => {
+    if (state.combat.length === 0 || confirm("Clear the initiative order?")) { state.combat = []; state.activeId = null; save(); render(); }
+  });
+
+  document.getElementById("restShortAll").addEventListener("click", () => {
+    if (confirm("Short rest for the whole party?")) { state.characters.forEach(shortRest); save(); render(); }
+  });
+  document.getElementById("restLongAll").addEventListener("click", () => {
+    if (confirm("Long rest for the whole party? (full HP, reset resources, exhaustion −1, recover half hit dice)")) { state.characters.forEach(longRest); save(); render(); }
+  });
+  document.getElementById("addCharBtn").addEventListener("click", () => {
+    state.characters.push({
+      id: uid(), name: "New Character", ac: 10, maxHp: 10, curHp: 10, tempHp: 0,
+      hd: { die: "d8", max: 1, used: 0, conMod: 0 },
+      exhaustion: 0, inspiration: false, death: { succ: 0, fail: 0 }, notes: "",
+      resources: []
+    });
+    save(); render();
+  });
+
+  // save / load / export / import
+  function stateJSON() { state.savedAt = new Date().toISOString(); return JSON.stringify(state, null, 2); }
+  document.getElementById("copyState").addEventListener("click", async () => {
+    const txt = stateJSON();
+    try { await navigator.clipboard.writeText(txt); flashBtn("copyState", "Copied ✓"); }
+    catch (e) { openModal("Copy state", "Copy the JSON below (clipboard was blocked).", txt, null, true); }
+  });
+  document.getElementById("exportState").addEventListener("click", () => {
+    const blob = new Blob([stateJSON()], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "westmere-tracker-state.json";
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("importState").addEventListener("click", () => document.getElementById("fileInput").click());
+  document.getElementById("fileInput").addEventListener("change", (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { applyImport(rd.result); e.target.value = ""; };
+    rd.readAsText(f);
+  });
+  document.getElementById("loadState").addEventListener("click", () => {
+    openModal("Load state", "Paste a saved JSON blob below and choose Load. This replaces the current table state.", "", applyImport, false);
+  });
+  document.getElementById("resetState").addEventListener("click", () => {
+    if (confirm("Reset to the default seed? This wipes the current table state on this device.")) { state = seed(); save(); render(); }
+  });
+
+  function applyImport(text) {
+    try {
+      const obj = migrate(JSON.parse(text));
+      if (!obj || !Array.isArray(obj.characters)) throw new Error("bad");
+      state = obj; save(); render(); closeModal();
+    } catch (e) { alert("That didn’t parse as valid tracker JSON. Check the blob and try again."); }
+  }
+  function flashBtn(id, txt) {
+    const b = document.getElementById(id); const old = b.textContent;
+    b.textContent = txt; setTimeout(() => { b.textContent = old; }, 1200);
+  }
+
+  // modal
+  let modalConfirmFn = null, modalReadonly = false;
+  function openModal(title, hint, text, confirmFn, readonly) {
+    document.getElementById("modalTitle").textContent = title;
+    document.getElementById("modalHint").textContent = hint;
+    const ta = document.getElementById("modalText");
+    ta.value = text; ta.readOnly = !!readonly;
+    modalConfirmFn = confirmFn; modalReadonly = !!readonly;
+    document.getElementById("modalConfirm").style.display = confirmFn ? "" : "none";
+    document.getElementById("modalCancel").textContent = confirmFn ? "Cancel" : "Close";
+    document.getElementById("modalBg").classList.add("open");
+    if (readonly) ta.select();
+  }
+  function closeModal() { document.getElementById("modalBg").classList.remove("open"); modalConfirmFn = null; }
+  document.getElementById("modalCancel").addEventListener("click", closeModal);
+  document.getElementById("modalConfirm").addEventListener("click", () => { if (modalConfirmFn) modalConfirmFn(document.getElementById("modalText").value); });
+  document.getElementById("modalBg").addEventListener("click", (e) => { if (e.target.id === "modalBg") closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+  // first paint + status
+  render();
+  if (state.savedAt) setStatus("saved"); else save();
+})();
 </script>
 </body>
 </html>
