@@ -48,6 +48,10 @@
     border-radius: 6px; padding: 5px 7px;
   }
   input[type="number"] { width: 64px; }
+  /* hide native spin arrows — they reserve right-edge space and clip centered values */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   textarea { width: 100%; resize: vertical; min-height: 46px; }
   .muted { color: var(--ink-dim); }
   .faint { color: var(--ink-faint); }
@@ -106,7 +110,7 @@
     display: flex; flex-direction: column; align-items: center;
     line-height: 1; gap: 2px;
   }
-  .ac input { width: 46px; text-align: center; font-weight: 650; }
+  .ac input { width: 50px; text-align: center; font-weight: 650; }
   .ac .lbl { font-size: 10px; letter-spacing: 0.08em; color: var(--ink-faint); text-transform: uppercase; }
   .x-btn {
     background: transparent; border: 1px solid transparent; color: var(--ink-faint);
@@ -351,6 +355,7 @@
 (function () {
   const LS_KEY = "westmere-tracker:v1";   // namespaced so it can't collide with other kentp111.github.io pages
   const DIE_OPTIONS = ["d6", "d8", "d10", "d12"];
+  const hdEditOpen = new Set();   // char ids whose hit-dice setup editor is expanded (prep only)
 
   // ---------- seed (placeholder data — every field is editable in the UI) ----------
   // Doran & Bram seeded at their current level-3 (2014) values as a starting point.
@@ -537,12 +542,14 @@
 
     const tempRow = el("div", "row2");
     const tempLbl = el("span", "maxhp-edit");
-    const tI = el("input"); tI.type = "number"; tI.value = c.tempHp; tI.title = "Temp HP";
-    tI.addEventListener("input", () => { c.tempHp = Math.max(0, num(tI.value, 0)); queueSave(); refreshCardHp(card, c); });
+    const tI = el("input"); tI.type = "number"; tI.value = c.tempHp; tI.title = "Temporary HP — a buffer that absorbs damage before real HP";
+    tI.addEventListener("input", () => { c.tempHp = Math.max(0, num(tI.value, 0)); });   // store while typing (keeps focus + multi-digit)
+    tI.addEventListener("change", () => { save(); render(); });                          // redraw badge / colors on blur or Enter
     tempLbl.append(el("span", "lbl", "Temp"), tI);
     const maxEdit = el("span", "maxhp-edit");
-    const mI = el("input"); mI.type = "number"; mI.value = c.maxHp; mI.title = "Max HP";
-    mI.addEventListener("input", () => { c.maxHp = Math.max(1, num(mI.value, c.maxHp)); c.curHp = Math.min(c.curHp, c.maxHp); save(); render(); });
+    const mI = el("input"); mI.type = "number"; mI.value = c.maxHp; mI.title = "Maximum HP";
+    mI.addEventListener("input", () => { c.maxHp = Math.max(1, num(mI.value, c.maxHp)); c.curHp = Math.min(c.curHp, c.maxHp); });
+    mI.addEventListener("change", () => { save(); render(); });
     maxEdit.append(el("span", "lbl", "Max"), mI);
     tempRow.append(tempLbl, maxEdit);
 
@@ -585,10 +592,6 @@
     return card;
   }
 
-  function refreshCardHp(card, c) {
-    // light touch: re-render is simplest and cheap at this scale
-  }
-
   function resourceRow(c, r) {
     const box = el("div", "res");
     const rh = el("div", "res-head");
@@ -628,15 +631,24 @@
   }
 
   function hitDiceMini(c) {
+    const open = hdEditOpen.has(c.id);
     const m = el("div", "mini");
-    const mh = el("div", "mh"); mh.appendChild(el("span", "t", "Hit Dice"));
+    const mh = el("div", "mh");
+    mh.appendChild(el("span", "t", "Hit Dice"));
+    mh.appendChild(el("span", "spacer"));
+    const editToggle = el("button"); editToggle.style.fontSize = "11px"; editToggle.style.padding = "2px 6px";
+    editToggle.textContent = open ? "done" : "edit";
+    editToggle.title = "Set the number of hit dice, die size, and CON mod (prep)";
+    editToggle.addEventListener("click", () => { if (open) hdEditOpen.delete(c.id); else hdEditOpen.add(c.id); render(); });
+    mh.appendChild(editToggle);
     m.appendChild(mh);
+
+    // pips: spend / restore only — no HP change, you roll your own die
     const line = el("div", "hd-line");
-    // pips: available = max - used
     for (let i = 0; i < c.hd.max; i++) {
       const p = el("button", "pip" + (i < c.hd.max - c.hd.used ? " filled" : ""));
       p.style.width = "18px"; p.style.height = "18px";
-      p.title = (i < c.hd.max - c.hd.used) ? "Spend a hit die" : "Restore";
+      p.title = (i < c.hd.max - c.hd.used) ? "Spend a hit die" : "Restore a spent hit die";
       p.addEventListener("click", () => {
         const avail = c.hd.max - c.hd.used;
         if (i < avail) c.hd.used++; else c.hd.used--;
@@ -645,35 +657,24 @@
       });
       line.appendChild(p);
     }
-    const die = el("span", "die", c.hd.die + " +" + c.hd.conMod);
-    line.appendChild(die);
+    if (c.hd.max === 0) line.appendChild(el("span", "tiny faint", "—"));
+    const modStr = (c.hd.conMod >= 0 ? "+" : "") + c.hd.conMod;
+    line.appendChild(el("span", "die", "roll " + c.hd.die + " " + modStr));
     m.appendChild(line);
 
-    const spend = el("button"); spend.style.fontSize = "12px"; spend.textContent = "Spend → heal";
-    spend.title = "Spend one hit die and roll healing";
-    spend.addEventListener("click", () => {
-      if (c.hd.max - c.hd.used <= 0) { alert("No hit dice left."); return; }
-      const sides = parseInt(c.hd.die.slice(1), 10);
-      const roll = 1 + Math.floor(Math.random() * sides);
-      const heal = Math.max(0, roll + c.hd.conMod);
-      c.hd.used++;
-      c.curHp = Math.min(c.maxHp, c.curHp + heal);
-      save(); render();
-      alert("Rolled " + roll + " on " + c.hd.die + " +" + c.hd.conMod + " = " + heal + " HP.");
-    });
-    m.appendChild(spend);
-
-    // editors
-    const edit = el("div", "row");
-    const maxI = el("input"); maxI.type = "number"; maxI.value = c.hd.max; maxI.style.width = "44px"; maxI.title = "Max hit dice";
-    maxI.addEventListener("input", () => { c.hd.max = Math.max(0, num(maxI.value, c.hd.max)); c.hd.used = Math.min(c.hd.used, c.hd.max); save(); render(); });
-    const dieS = el("select");
-    DIE_OPTIONS.forEach(d => { const o = el("option", null, d); o.value = d; if (d === c.hd.die) o.selected = true; dieS.appendChild(o); });
-    dieS.addEventListener("change", () => { c.hd.die = dieS.value; queueSave(); });
-    const conI = el("input"); conI.type = "number"; conI.value = c.hd.conMod; conI.style.width = "44px"; conI.title = "CON mod added to each die";
-    conI.addEventListener("input", () => { c.hd.conMod = num(conI.value, c.hd.conMod); queueSave(); });
-    edit.append(el("span", "tiny faint", "max"), maxI, dieS, el("span", "tiny faint", "CON"), conI);
-    m.appendChild(edit);
+    // setup editor — collapsed during play
+    if (open) {
+      const edit = el("div", "row");
+      const maxI = el("input"); maxI.type = "number"; maxI.value = c.hd.max; maxI.style.width = "44px"; maxI.title = "Number of hit dice";
+      maxI.addEventListener("input", () => { c.hd.max = Math.max(0, num(maxI.value, c.hd.max)); c.hd.used = Math.min(c.hd.used, c.hd.max); queueSave(); });
+      const dieS = el("select");
+      DIE_OPTIONS.forEach(d => { const o = el("option", null, d); o.value = d; if (d === c.hd.die) o.selected = true; dieS.appendChild(o); });
+      dieS.addEventListener("change", () => { c.hd.die = dieS.value; save(); render(); });
+      const conI = el("input"); conI.type = "number"; conI.value = c.hd.conMod; conI.style.width = "44px"; conI.title = "CON mod — the bonus added when you roll";
+      conI.addEventListener("input", () => { c.hd.conMod = num(conI.value, c.hd.conMod); queueSave(); });
+      edit.append(el("span", "tiny faint", "count"), maxI, dieS, el("span", "tiny faint", "CON"), conI);
+      m.appendChild(edit);
+    }
     return m;
   }
 
